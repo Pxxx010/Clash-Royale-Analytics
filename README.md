@@ -2,6 +2,10 @@
 
 Este projeto realiza análises estatísticas de batalhas do Clash Royale utilizando MongoDB como banco de dados.
 
+# Grupo:
+
+Afonso Luna, Carlos Soares, Iago Vieira, Luiz Paulo, Priscila Silva e Rômullo Bastos
+
 ## 🚀 Funcionalidades
 
 O sistema oferece as seguintes análises:
