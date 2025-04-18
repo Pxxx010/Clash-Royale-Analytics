@@ -7,7 +7,6 @@ import os
 def limpar_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-# Conexão com o MongoDB
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 battles = db["battles"]
@@ -26,18 +25,16 @@ def menu():
     return input("\nEscolha uma opção (0-8): ")
 
 def executar_analise(opcao):
-    # Definir período padrão para todas as análises
-    inicio = datetime(2025, 3, 1)
-    fim = datetime(2025, 4, 30)
+    start = datetime(2025, 2, 1)
+    end = datetime(2025, 4, 30)
     
     if opcao == "1":
-        # Consulta 1 - % de Vitórias/Derrotas com uma Carta Específica
         print("exemplo: Arrows")
         carta = input("Digite o nome da carta:")
         pipeline1 = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim},
+                    "utcTime": {"$gte": start, "$lte": end},
                     "$or": [
                         {"team.cards.name": carta},
                         {"opponent.cards.name": carta}
@@ -57,7 +54,7 @@ def executar_analise(opcao):
         total = vitorias + derrotas
         
         print(f"\nCarta: {carta}")
-        print(f"Período: {inicio.date()} até {fim.date()}")
+        print(f"Período: {start.date()} até {end.date()}")
         if total == 0:
             print("Nenhuma batalha encontrada com essa carta no intervalo fornecido.")
         else:
@@ -66,12 +63,11 @@ def executar_analise(opcao):
             print(f"Derrotas: {derrotas} ({(derrotas/total)*100:.2f}%)")
     
     elif opcao == "2":
-        # Consulta 2 - Decks com mais de X% de vitórias
         min_porcentagem = float(input("Digite a porcentagem mínima de vitórias (ex: 60): "))
         pipeline2 = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim}
+                    "utcTime": {"$gte": start, "$lte": end}
                 }
             },
             {
@@ -134,20 +130,19 @@ def executar_analise(opcao):
             }
         ]
         result2 = list(battles.aggregate(pipeline2))
-        print(f"\nDecks com mais de {min_porcentagem}% de vitórias entre {inicio.date()} e {fim.date()}")
+        print(f"\nDecks com mais de {min_porcentagem}% de vitórias entre {start.date()} e {end.date()}")
         for deck in result2:
             print(f"\nDeck: {deck['deck']}")
             print(f"Vitórias: {deck['vitorias']} / {deck['total']} ({deck['porcentagem']:.2f}%)")
     
     elif opcao == "3":
-        # Consulta 3 - Derrotas com combo de cartas
         print("exemplo: Arrows, Bowler")
         combo = input("Digite as cartas do combo separadas por vírgula: ").split(",")
         combo = [carta.strip() for carta in combo]
         pipeline3 = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim},
+                    "utcTime": {"$gte": start, "$lte": end},
                     "is_winner": False
                 }
             },
@@ -183,19 +178,18 @@ def executar_analise(opcao):
         ]
         result3 = list(battles.aggregate(pipeline3))
         print(f"\nCombo: {combo}")
-        print(f"Período: {inicio.date()} até {fim.date()}")
+        print(f"Período: {start.date()} até {end.date()}")
         if result3:
             print(f"Total de derrotas com esse combo: {result3[0]['total_derrotas']}")
         else:
             print("Nenhuma derrota encontrada com esse combo no intervalo.")
     
     elif opcao == "4":
-        # Consulta 4 - Vitórias com carta específica e menos troféus
         carta = input("Digite o nome da carta: ")
         pipeline4 = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim},
+                    "utcTime": {"$gte": start, "$lte": end},
                     "is_winner": True
                 }
             },
@@ -234,14 +228,13 @@ def executar_analise(opcao):
         ]
         result4 = list(battles.aggregate(pipeline4))
         print(f"\nCarta: {carta}")
-        print(f"Período: {inicio.date()} até {fim.date()}")
+        print(f"Período: {start.date()} até {end.date()}")
         if result4:
             print(f"Total de vitórias com esses critérios: {result4[0]['total']}")
         else:
             print("Nenhuma vitória encontrada com esses critérios.")
     
     elif opcao == "5":
-        # Consulta 5 - Combos de N cartas com alta taxa de vitória
         combo_size = int(input("Digite o tamanho do combo (ex: 3): "))
         min_porcentagem = float(input("Digite a porcentagem mínima de vitórias (ex: 50): "))
         
@@ -249,7 +242,7 @@ def executar_analise(opcao):
         from collections import defaultdict
         
         matches = list(battles.find({
-            "utcTime": {"$gte": inicio, "$lte": fim}
+            "utcTime": {"$gte": start, "$lte": end}
         }))
         
         combo_stats = defaultdict(lambda: {"total": 0, "vitorias": 0})
@@ -285,17 +278,16 @@ def executar_analise(opcao):
         
         result5.sort(key=lambda x: x["porcentagem"], reverse=True)
         
-        print(f"\nCombos de {combo_size} cartas com mais de {min_porcentagem}% de vitórias entre {inicio.date()} e {fim.date()}")
+        print(f"\nCombos de {combo_size} cartas com mais de {min_porcentagem}% de vitórias entre {start.date()} e {end.date()}")
         for combo in result5:
             print(f"\nCombo: {combo['combo']}")
             print(f"Vitórias: {combo['vitorias']} / {combo['total']} ({combo['porcentagem']:.2f}%)")
     
     elif opcao == "6":
-        # Análise de Clãs Enfrentados
         pipeline_clans = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim}
+                    "utcTime": {"$gte": start, "$lte": end}
                 }
             },
             {
@@ -332,7 +324,7 @@ def executar_analise(opcao):
         
         result_clans = list(battles.aggregate(pipeline_clans))
         
-        print(f"\nAnálise de Clãs Enfrentados entre {inicio.date()} e {fim.date()}")
+        print(f"\nAnálise de Clãs Enfrentados entre {start.date()} e {end.date()}")
         print(f"Total de clãs diferentes enfrentados: {len(result_clans)}")
         print("\nDetalhes por clã:")
         for clan in result_clans:
@@ -342,11 +334,10 @@ def executar_analise(opcao):
             print(f"Média de troféus dos oponentes: {clan['avg_opponent_trophies']:.0f}")
     
     elif opcao == "7":
-        # Análise de Performance por Horário
         pipeline_horario = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim}
+                    "utcTime": {"$gte": start, "$lte": end}
                 }
             },
             {
@@ -398,7 +389,7 @@ def executar_analise(opcao):
         
         result_horario = list(battles.aggregate(pipeline_horario))
         
-        print(f"\nAnálise de Performance por Horário entre {inicio.date()} e {fim.date()}")
+        print(f"\nAnálise de Performance por Horário entre {start.date()} e {end.date()}")
         print("\nDetalhes por horário:")
         for hora in result_horario:
             print(f"\nHora: {hora['hora']}:00")
@@ -419,11 +410,10 @@ def executar_analise(opcao):
         print(f"Pior horário: {pior_horario['hora']}:00 ({pior_horario['taxa_vitoria']:.2f}% de vitórias)")
     
     elif opcao == "8":
-        # Análise de Evolução de Troféus
         pipeline_evolucao = [
             {
                 "$match": {
-                    "utcTime": {"$gte": inicio, "$lte": fim}
+                    "utcTime": {"$gte": start, "$lte": end}
                 }
             },
             {
@@ -477,7 +467,7 @@ def executar_analise(opcao):
         
         result_evolucao = list(battles.aggregate(pipeline_evolucao))
         
-        print(f"\nAnálise de Evolução de Troféus entre {inicio.date()} e {fim.date()}")
+        print(f"\nAnálise de Evolução de Troféus entre {start.date()} e {end.date()}")
         print("\nDetalhes por dia:")
         for dia in result_evolucao:
             print(f"\nData: {dia['data']}")
